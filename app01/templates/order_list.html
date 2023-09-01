@@ -1,0 +1,314 @@
+{% extends "layout.html" %}
+
+{% block title %}
+    <title>Orders</title>
+{% endblock %}
+
+{% block content %}
+    <div class="container">
+        <div style="margin-bottom: 10px">
+            <!-- Button trigger modal -->
+            <!-- <input type="button" value="New Order" class="btn btn-success"
+                   data-bs-toggle="modal" data-bs-target="#orderModal"> -->
+            <input type="button" id="order_add" class="btn btn-success btn-sm" value="New Order">
+        </div>
+
+        <div class="card">
+            <div class="card-body">
+                <i class="bi bi-list-ul"></i>
+                Order List
+            </div>
+            <table class="table table-bordered">
+                <thead>
+                <tr>
+                    <th scope="col">ID</th>
+                    <th scope="col">Order Number</th>
+                    <th scope="col">Product</th>
+                    <th scope="col">Price($)</th>
+                    <th scope="col">Status</th>
+                    <th scope="col">Customer</th>
+                    <th scope="col">Operation</th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for obj in queryset %}
+                    <tr>
+                        <th scope="row">{{ obj.id }}</th>
+                        <td>{{ obj.order_id }}</td>
+                        <td>{{ obj.product }}</td>
+                        <td>{{ obj.price }}</td>
+                        <td>{{ obj.get_status_display }}</td>
+                        <td>{{ obj.customer.username }}</td>
+                        <td>
+                            <input uid="{{ obj.id }}" type="button" class="btn btn-primary btn-sm order_edit"
+                                   value="Edit">
+                            <input uid="{{ obj.id }}" class="btn btn-danger btn-sm order_delete" type="button"
+                                   value="Delete">
+                        </td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+
+            </table>
+        </div>
+    </div>
+
+
+    <!-- Create/Edit Order Modal -->
+    <div class="modal fade" id="orderModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h1 class="modal-title fs-5" id="exampleModalLabel"></h1>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="formAdd">
+                        {% csrf_token %}
+                        <div class="row">
+                            {% for field in form %}
+                                <div class="mb-3 col-sm-6" style="position: relative">
+                                    <label class="col-form-label">{{ field.label }}:</label>
+                                    {{ field }}
+                                    <!--<input type="text" class="form-control" placeholder="name" name="user_name">-->
+                                    <span class="error_msg"
+                                          style="color: red; position: absolute">{{ field.errors.0 }}</span>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button id="orderSave" type="button" class="btn btn-primary">Save changes</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Delete Order Modal -->
+    <div class="modal fade" id="deleteModal" role="dialog" tabindex="-1" aria-labelledby="exampleModalLabel"
+         aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content" style="height: 0px">
+                <div class="alert alert-danger alert-dismissible" role="alert">
+                    <h4 class="alert-heading">Sure to delete?</h4>
+                    <p style="margin: 10px 0px">Deleted data is not recoverable!</p>
+                    <hr>
+                    <div class="modal-footer" style="text-align: right">
+                        <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+                        <button id="btnConfirmDelete" type="button" class="btn btn-danger">Proceed to delete</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+{% endblock %}
+
+{% block pagination %}
+    {#    前一页#}
+    {% if page_obj.has_previous %}
+        <li class="page-item">
+            <a class="page-link"
+               href="{% url 'orders-by-page' page_obj.previous_page_number %}">
+                Previous
+            </a>
+        </li>
+    {% endif %}
+    {#    中间#}
+    {% for page_number in page_obj.adjusted_elided_pages %}
+        {% if page_number == page_obj.paginator.ELLIPSIS %}
+            {{ page_number }}
+        {% else %}
+            <li class="page-item {% if page_number == page_obj.number %}active{% endif %}">
+                <a
+                        class="page-link {% if page_number == page_obj.number %}current{% endif %}"
+                        href="{% url 'orders-by-page' page_number %}">
+                    {{ page_number }}
+                </a>
+            </li>
+        {% endif %}
+    {% endfor %}
+    {#    后一页#}
+    {% if page_obj.has_next %}
+        <li class="page-item">
+            <a class="page-link" href="{% url 'orders-by-page' page_obj.next_page_number %}">
+                Next
+            </a>
+        </li>
+    {% endif %}
+{% endblock %}
+
+{% block script %}
+    <script type="text/javascript">
+        var DELETING_ID;
+        var EDITING_ID;
+
+        $(function () {
+            orderAddEvent();
+            orderSaveEvent();
+            orderDeleteEvent();
+            btnConfirmDeleteEvent();
+            btnEditEvent();
+
+        })
+
+        function orderAddEvent() {
+            $("#order_add").click(function () {
+                // 将正在编辑的EDITING_ID设置为空
+                EDITING_ID = undefined;
+                // 清空对话框数据
+                $("#formAdd")[0].reset();
+                // 修改模态框标题
+                $("#exampleModalLabel").text("Create a New Order");
+                // 显示模态框
+                $("#orderModal").modal("show");
+            });
+        }
+
+        function orderSaveEvent() {
+            $("#orderSave").click(function () {
+                // 清除错误信息
+                $(".error_msg").empty();
+                if (EDITING_ID) {
+                    // 编辑
+                    doEdit();
+                } else {
+                    // 添加
+                    doAdd();
+                }
+
+            });
+        }
+
+        function doEdit() {
+            // 向后台发送正在编辑的数据
+            $.ajax({
+                url: "/order/edit/" + "?uid=" + EDITING_ID,
+                type: "post",
+                data: $("#formAdd").serialize(),
+                dataType: "JSON",
+                success: function (res) {
+                    if (res.status) {
+                        // 编辑成功，清空表单
+                        // $("#formAdd")是jQuery对象，要用$("#formAdd")[0]是DOM对象
+                        $("#formAdd")[0].reset();
+                        // 编辑成功，关闭模态框
+                        $("#orderModal").modal("hide");
+                        // 编辑完成，刷新页面
+                        location.reload();
+                    } else {
+                        if (res.msg) {
+                            // 如果不存在，则发送警告
+                            alert(res.msg);
+                        } else {
+                            // 更改不成功，在模态框循环展示错误信息
+                            $.each(res.error, function (name, errorList) {
+                                $("#id_" + name).next().text(errorList[0]);
+                            })
+                        }
+
+                    }
+                }
+            })
+        }
+
+        function doAdd() {
+            // 向后台发送添加数据
+            $.ajax({
+                url: "/order/add/",
+                type: "post",
+                data: $("#formAdd").serialize(),
+                dataType: "JSON",
+                success: function (res) {
+                    if (res.status) {
+                        alert("Successfully Created!");
+                        // 添加成功，清空表单
+                        // $("#formAdd")是jQuery对象，要用$("#formAdd")[0]是DOM对象
+                        $("#formAdd")[0].reset();
+                        // 添加成功，关闭模态框
+                        $("#orderModal").modal("hide");
+                        // 添加完成，刷新页面
+                        location.reload();
+                    } else {
+                        console.log(res)
+                        // 创建不成功，在模态框循环展示错误信息
+                        $.each(res.error, function (name, errorList) {
+                            $("#id_" + name).next().text(errorList[0]);
+                        })
+                    }
+                }
+            })
+        }
+
+        function orderDeleteEvent() {
+            $(".order_delete").click(function () {
+                // alert("Clicked Delete!");
+                $("#deleteModal").modal("show");
+                // 获取当前行ID，并赋值给全局变量
+                DELETING_ID = $(this).attr("uid");
+            });
+        }
+
+        function btnConfirmDeleteEvent() {
+            $("#btnConfirmDelete").click(function () {
+                $.ajax({
+                    url: "/order/delete/",
+                    type: "get",
+                    data: {
+                        uid: DELETING_ID
+                    },
+                    dataType: "JSON",
+                    success: function (res) {
+                        if (res.status) {
+                            // alert("Successfully!");
+
+                            // 删除成功，刷新页面
+                            location.reload();
+
+                        } else {
+                            alert(res.error);
+                        }
+                    }
+                })
+
+            });
+        }
+
+        function btnEditEvent() {
+            $(".order_edit").click(function () {
+                // 清空对话框数据
+                $("#formAdd")[0].reset();
+                // 获取当前编辑ID
+                var uid = $(this).attr("uid");
+                EDITING_ID = uid;
+                // 发送Ajax请求，去后端获取当前行数据  order/detail/?uid=...
+                $.ajax({
+                    url: "/order/detail/",
+                    type: "get",
+                    data: {
+                        uid: uid
+                    },
+                    dataType: "JSON",
+                    success: function (res) {
+                        if (res.status) {
+                            // 将数据赋值到对话框的标签中
+                            $.each(res.data, function (key, value) {
+                                $("#id_" + key).val(value);
+                            });
+                            // 如果所要编辑的order存在，则展示模态框
+                            // 修改模态框标题
+                            $("#exampleModalLabel").text("Edit this order");
+                            // 显示模态框
+                            $("#orderModal").modal("show");
+                        } else {
+                            alert(res.error)
+                        }
+                    }
+                })
+            });
+        }
+    </script>
+
+{% endblock %}

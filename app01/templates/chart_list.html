@@ -1,0 +1,210 @@
+{% extends "layout.html" %}
+{% block title %}
+    <title>charts</title>
+{% endblock %}
+
+{% block content %}
+    <div class="container">
+        <div class="card" style="margin-bottom: 20px">
+            <div class="card-header">
+                Bar Chart
+            </div>
+            <div class="card-body">
+                <div id="bar" style="width: 100%"></div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-sm-8">
+                <div class="card">
+                    <div class="card-header">
+                        Line Chart
+                    </div>
+                    <div class="card-body">
+                        <div id="line" style=""></div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-sm-4">
+                <div class="card">
+                    <div class="card-header">
+                        Pie Chart
+                    </div>
+                    <div class="card-body">
+                        <div id="pie" style=""></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block script %}
+    <script src="https://code.highcharts.com/highcharts.js"></script>
+    <script type="text/javascript">
+        $(function () {
+            barChartPlot();
+            lineChartPlot();
+            pieChartPlot();
+        })
+
+        function barChartPlot() {
+            var option = {
+                chart: {
+                    type: 'column'
+                },
+                title: {
+                    text: 'Bar Chart Title'
+                },
+                subtitle: {
+                    text: ''
+                },
+                xAxis: {
+                    categories: [],     //后台获取
+                    crosshair: true
+                },
+                yAxis: {
+                    min: 0,
+                    title: {
+                        text: 'Rainfall (mm)'
+                    }
+                },
+                tooltip: {
+                    headerFormat: '<span style="font-size:10px">{point.key}</span><table>',
+                    pointFormat: '<tr><td style="color:{series.color};padding:0">{series.name}: </td>' +
+                        '<td style="padding:0"><b>{point.y:.1f} (单位)</b></td></tr>',
+                    footerFormat: '</table>',
+                    shared: true,
+                    useHTML: true
+                },
+                plotOptions: {
+                    column: {
+                        pointPadding: 0.2,
+                        borderWidth: 0
+                    }
+                },
+                series: []      //后台获取
+            }
+            $.ajax({
+                url: "/chart/bar/",
+                type: "get",
+                dataType: "JSON",
+                success: function (res) {
+                    if (res.status) {
+                        option.xAxis.categories = res.data.x_axis;
+                        option.series = res.data.data_series;
+
+                        Highcharts.chart('bar', option);
+
+                    }
+                }
+            })
+        }
+
+        function lineChartPlot() {
+            var option = {
+                title: {
+                    text: 'U.S Solar Employment Growth by Job Category, 2010-2020',
+                    align: 'left'
+                },
+                subtitle: {
+                    text: '',
+                    align: 'left'
+                },
+                yAxis: {
+                    title: {
+                        text: 'Number of Employees'
+                    }
+                },
+                xAxis: {
+                    accessibility: {
+                        // rangeDescription: 'Range: 2010 to 2020'
+                        // categories: [...Array(2010,2019).keys()],
+                    }
+                },
+                legend: {
+                    /*
+                    layout: 'vertical',
+                    align: 'right',
+                    verticalAlign: 'middle'
+                    */
+                    layout: 'horizontal',
+                    align: 'center',
+                    verticalAlign: 'bottom'
+                },
+                plotOptions: {
+                    series: {
+                        label: {
+                            connectorAllowed: false
+                        },
+                        pointStart: null        //后台获取
+                    }
+                },
+                series: [],
+            }
+            $.ajax({
+                url: "/chart/line/",
+                type: "get",
+                dataType: "JSON",
+                success: function (res) {
+                    if (res.status) {
+                        option.plotOptions.series.pointStart = res.data.x_start;
+                        option.series = res.data.data_series;
+                        Highcharts.chart('line', option);
+                    }
+                }
+            })
+        }
+
+        function pieChartPlot() {
+            var option = {
+                chart: {
+                    plotBackgroundColor: null,
+                    plotBorderWidth: null,
+                    plotShadow: false,
+                    type: 'pie'
+                },
+                title: {
+                    text: 'Browser market shares in May, 2020',
+                    align: 'left'
+                },
+                tooltip: {
+                    pointFormat: '{series.name}: <b>{point.percentage:.1f}%</b>'
+                },
+                accessibility: {
+                    point: {
+                        valueSuffix: '%'
+                    }
+                },
+                /* plotOptions: {
+                    pie: {
+                        allowPointSelect: true,
+                        cursor: 'pointer',
+                        dataLabels: {
+                            enabled: true,
+                            format: '<b>{point.name}</b>: {point.percentage:.1f} %'
+                        }
+                    }
+                },*/
+                series: [{
+                    name: 'Brands',
+                    colorByPoint: true,
+                    data: []
+                }]
+            }
+            $.ajax({
+                url: "/chart/pie/",
+                type: "get",
+                dataType: "JSON",
+                success: function (res) {
+                    if (res.status) {
+                        option.series[0].data = res.data.data_series;
+                        Highcharts.chart('pie', option);
+                    }
+                }
+            })
+        }
+
+    </script>
+
+{% endblock %}
+

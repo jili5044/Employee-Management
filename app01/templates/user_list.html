@@ -1,0 +1,258 @@
+{% extends 'layout.html' %}
+{% block title %}
+    <title>Users</title>
+{% endblock %}
+
+{% block content %}
+    <div class="container">
+
+        <div style="margin-bottom: 10px">
+            <button type="button" class="btn btn-success btn-sm" data-bs-toggle="modal"
+                    data-bs-target="#addingModal1">新建用户1
+            </button>
+            <button type="button" class="btn btn-success btn-sm" data-bs-toggle="modal"
+                    data-bs-target="#addingModal2">新建用户2
+            </button>
+            <div class="modal fade" id="addingModal1" tabindex="-1" aria-labelledby="exampleModalLabel"
+                 aria-hidden="true">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h1 class="modal-title fs-5" id="exampleModalLabel">Add User</h1>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            <form method="post">
+                                {% csrf_token %}
+                                <div class="mb-3">
+                                    <label class="col-form-label">Name:</label>
+                                    <input type="text" class="form-control" placeholder="name" name="user_name">
+                                </div>
+                                <div class="mb-3">
+                                    <label class="col-form-label">Password:</label>
+                                    <input type="text" class="form-control" placeholder="password" name="pwd">
+                                </div>
+                                <div class="mb-3">
+                                    <label class="col-form-label">Age:</label>
+                                    <input type="text" class="form-control" placeholder="age" name="age">
+                                </div>
+                                <div class="mb-3">
+                                    <label class="col-form-label">Deposit:</label>
+                                    <input type="text" class="form-control" placeholder="deposit" name="deposit">
+                                </div>
+                                <div class="mb-3">
+                                    <label class="col-form-label">Create_time:</label>
+                                    <input type="text" id="dt1" class="form-control" placeholder="create_time"
+                                           name="time">
+                                </div>
+                                <div class="mb-3">
+                                    <label class="col-form-label">Gender:</label>
+                                    <select class="form-control" name="gender">
+                                        {% for gender in gender_choice %}
+                                            <option value="{{ gender.0 }}">{{ gender.1 }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="col-form-label">Department:</label>
+                                    <select class="form-control" name="dp">
+                                        {% for depart in depart_list %}
+                                            <option value="{{ depart.id }}">{{ depart.title }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="submit" name="add_user1" class="btn btn-primary">Save</button>
+                                </div>
+                            </form>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+            <div class="modal fade" id="addingModal2" tabindex="-1" aria-labelledby="exampleModalLabel"
+                 aria-hidden="true">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h1 class="modal-title fs-5" id="exampleModalLabel">Add User2</h1>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            <form method="post" novalidate>
+                                {% csrf_token %}
+                                {% for field in form %}
+                                    <div class="mb-3">
+                                        <label class="col-form-label">{{ field.label }}:</label>
+                                        {{ field }}
+                                        <!--<input type="text" class="form-control" placeholder="name" name="user_name">-->
+                                        <span style="color: red">{{ field.errors.0 }}</span>
+                                    </div>
+                                {% endfor %}
+                                <div class="modal-footer">
+                                    <button type="submit" name="add_user2" class="btn btn-primary">Save</button>
+                                </div>
+                            </form>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-body">
+                <i class="bi bi-list-ul"></i>
+                用户列表
+            </div>
+            <table class="table table-bordered">
+                <thead>
+                <tr>
+                    <th scope="col">ID</th>
+                    <th scope="col">Name</th>
+                    <th scope="col">Password</th>
+                    <th scope="col">Age</th>
+                    <th scope="col">Deposit</th>
+                    <th scope="col">Create_time</th>
+                    <th scope="col">Gender</th>
+                    <th scope="col">Depart_title</th>
+                    <th scope="col">Operation</th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for obj in queryset %}
+                    <tr>
+                        <th scope="row">{{ obj.id }}</th>
+                        <td>{{ obj.name }}</td>
+                        <td>{{ obj.password }}</td>
+                        <td>{{ obj.age }}</td>
+                        <td>{{ obj.deposit }}</td>
+                        <td>{{ obj.create_time|date:"Y-m-d" }}</td>
+                        <td>{{ obj.get_gender_display }}</td>
+                        <td>{{ obj.depart.title }}</td>
+                        <td>
+                            <button type="button" class="btn btn-primary btn-sm"
+                                    data-bs-toggle="modal" data-bs-id="{{ obj.id }}"
+                                    data-bs-target="#editModal">编辑
+                            </button>
+
+                            <div class="modal fade" id="editModal" tabindex="-1" aria-labelledby="exampleModalLabel"
+                                 aria-hidden="true">
+                                <div class="modal-dialog">
+                                    <div class="modal-content">
+                                        <div class="modal-header">
+                                            <h1 class="modal-title fs-5" id="exampleModalLabel">Edit User</h1>
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal"
+                                                    aria-label="Close"></button>
+                                        </div>
+                                        <div class="modal-body">
+                                            <form method="post">
+                                                {% csrf_token %}
+                                                {% for field in form %}
+                                                    <div class="mb-3">
+                                                        <label class="col-form-label">{{ field.label }}:</label>
+                                                        {{ field }}
+                                                        <!--<input type="text" class="form-control" placeholder="name" name="user_name">-->
+                                                        <span style="color: red">{{ field.errors.0 }}</span>
+                                                    </div>
+                                                {% endfor %}
+                                                <div class="mb-3">
+                                                    <input type="hidden" name="user_id_editing">
+                                                </div>
+                                                <div class="modal-footer">
+                                                    <button type="submit" name="edit_user" class="btn btn-primary">
+                                                        Save
+                                                    </button>
+                                                </div>
+                                            </form>
+                                        </div>
+
+                                    </div>
+                                </div>
+                            </div>
+                            {#                            <a class="btn btn-primary btn-sm" href="#">编辑</a>#}
+                            <a class="btn btn-danger btn-sm"
+                               href="/user/{{ page_obj.number }}/delete/?nid={{ obj.id }}">
+                                删除
+                            </a>
+                        </td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+
+            </table>
+        </div>
+
+    </div>
+{% endblock %}
+
+{% block pagination %}
+    {#    前一页#}
+    {% if page_obj.has_previous %}
+        <li class="page-item">
+            <a class="page-link" href="{% url 'users-by-page' page_obj.previous_page_number %}">
+                Previous
+            </a>
+        </li>
+    {% endif %}
+    {#    中间#}
+    {% for page_number in page_obj.adjusted_elided_pages %}
+        {% if page_number == page_obj.paginator.ELLIPSIS %}
+            {{ page_number }}
+        {% else %}
+            <li class="page-item {% if page_number == page_obj.number %}active{% endif %}">
+                <a
+                        class="page-link {% if page_number == page_obj.number %}current{% endif %}"
+                        href="{% url 'users-by-page' page_number %}">
+                    {{ page_number }}
+                </a>
+            </li>
+        {% endif %}
+    {% endfor %}
+    {#    后一页#}
+    {% if page_obj.has_next %}
+        <li class="page-item">
+            <a class="page-link" href="{% url 'users-by-page' page_obj.next_page_number %}">
+                Next
+            </a>
+        </li>
+    {% endif %}
+{% endblock %}
+
+{% block script %}
+    <script type="text/javascript">
+        const editModal = document.getElementById('editModal')
+        editModal.addEventListener('show.bs.modal', event => {
+            // Button that triggered the modal
+            const button = event.relatedTarget
+            // Extract info from data-bs-* attributes
+            const user_id = button.getAttribute('data-bs-id')
+            // If necessary, you could initiate an AJAX request here
+            // and then do the updating in a callback.
+            //
+            // Update the modal's content.
+            // const modalBodyInput = editModal.querySelector('.modal-body input[type="text"]')
+            const modalHiddenInput = editModal.querySelector('.modal-body input[name="user_id_editing"]')
+
+            modalHiddenInput.value = user_id
+        })
+    </script>
+
+    <script type="text/javascript">
+        $(document).ready(function () {
+            $('#dt1').datepicker({
+                dateFormat: 'yy-mm-dd',
+
+                changeMonth: true,
+                changeYear: true,
+
+                showOtherMonths: true,
+                selectOtherMonths: true,
+            });
+            $("#anim").on("change", function () {
+                $("#datepicker").datepicker("option", "showAnim", fadeIn());
+            });
+            $.noConflict();
+        })
+    </script>
+{% endblock %}

@@ -1,0 +1,164 @@
+{% extends 'layout.html' %}
+
+{% block title %}
+    <title>Department</title>
+{% endblock %}
+
+
+{% block content %}
+    <div class="container">
+
+        <div style="margin-bottom: 10px">
+            <button type="button" class="btn btn-success btn-sm" data-bs-toggle="modal"
+                    data-bs-target="#addingModal">新建部门
+            </button>
+            <div class="modal fade" id="addingModal" tabindex="-1" aria-labelledby="exampleModalLabel"
+                 aria-hidden="true">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h1 class="modal-title fs-5" id="exampleModalLabel">Add Department</h1>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            <form method="post">
+                                {% csrf_token %}
+                                <div class="mb-3">
+                                    <label class="col-form-label">Title:</label>
+                                    <input type="text" class="form-control" placeholder="Title" name="title">
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="submit" name="add_depart" class="btn btn-primary">Save</button>
+                                </div>
+                            </form>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-body">
+                <i class="bi bi-list-ul"></i>
+                部门列表
+            </div>
+            <table class="table table-bordered">
+                <thead>
+                <tr>
+                    <th scope="col">ID</th>
+                    <th scope="col">Name</th>
+                    <th scope="col">Operation</th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for obj in queryset %}
+                    <tr>
+                        <th scope="row">{{ obj.id }}</th>
+                        <td>{{ obj.title }}</td>
+                        <td>
+                            <button type="button" class="btn btn-primary btn-sm" data-bs-toggle="modal"
+                                    data-bs-id="{{ obj.id }}" data-bs-title="{{ obj.title }}"
+                                    data-bs-target="#editModal">编辑
+                            </button>
+                            <div class="modal fade" id="editModal" tabindex="-1" aria-labelledby="exampleModalLabel"
+                                 aria-hidden="true">
+                                <div class="modal-dialog">
+                                    <div class="modal-content">
+                                        <div class="modal-header">
+                                            <h1 class="modal-title fs-5" id="exampleModalLabel">Edit Department</h1>
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal"
+                                                    aria-label="Close"></button>
+                                        </div>
+                                        <div class="modal-body">
+                                            <form method="post">
+                                                {% csrf_token %}
+                                                <div class="mb-3">
+                                                    <label class="col-form-label">Edit to:</label>
+                                                    <input type="text" class="form-control" placeholder="New Title"
+                                                           name="new_depart_title">
+                                                    <input type="hidden" name="depart_id_editing">
+                                                </div>
+                                                <div class="modal-footer">
+                                                    <button type="submit" name="edit_depart" class="btn btn-primary">
+                                                        Save
+                                                    </button>
+                                                </div>
+                                            </form>
+                                        </div>
+
+                                    </div>
+                                </div>
+                            </div>
+                            {#                            <a class="btn btn-primary btn-sm" href="#">编辑</a>#}
+                            <a class="btn btn-danger btn-sm"
+                               href="/depart/{{ page_obj.number }}/delete/?nid={{ obj.id }}">
+                                删除
+                            </a>
+                        </td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+
+            </table>
+        </div>
+
+    </div>
+{% endblock %}
+
+{% block pagination %}
+{#    前一页#}
+    {% if page_obj.has_previous %}
+        <li class="page-item">
+            <a class="page-link" href="{% url 'departs-by-page' page_obj.previous_page_number %}">
+                Previous
+            </a>
+        </li>
+    {% endif %}
+{#    中间#}
+    {% for page_number in page_obj.adjusted_elided_pages %}
+        {% if page_number == page_obj.paginator.ELLIPSIS %}
+            {{ page_number }}
+        {% else %}
+            <li class="page-item {% if page_number == page_obj.number %}active{% endif %}">
+                <a
+                        class="page-link {% if page_number == page_obj.number %}current{% endif %}"
+                        href="{% url 'departs-by-page' page_number %}">
+                    {{ page_number }}
+                </a>
+            </li>
+        {% endif %}
+    {% endfor %}
+{#    后一页#}
+    {% if page_obj.has_next %}
+        <li class="page-item">
+            <a class="page-link" href="{% url 'departs-by-page' page_obj.next_page_number %}">
+                Next
+            </a>
+        </li>
+    {% endif %}
+{% endblock %}
+
+{% block script %}
+    <script type="text/javascript">
+        const editModal = document.getElementById('editModal')
+        editModal.addEventListener('show.bs.modal', event => {
+            // Button that triggered the modal
+            const button = event.relatedTarget
+            // Extract info from data-bs-* attributes
+            const depart_id = button.getAttribute('data-bs-id')
+            const depart_title = button.getAttribute('data-bs-title')
+            // If necessary, you could initiate an AJAX request here
+            // and then do the updating in a callback.
+            //
+            // Update the modal's content.
+            const modalLabel = editModal.querySelector('.col-form-label')
+            // const modalBodyInput = editModal.querySelector('.modal-body input[type="text"]')
+            const modalHiddenInput = editModal.querySelector('.modal-body input[name="depart_id_editing"]')
+
+            modalLabel.textContent = "Edit \"" + depart_title + "\" to:"
+            modalHiddenInput.value = depart_id
+        })
+    </script>
+{% endblock %}
+
